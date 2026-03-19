@@ -2,7 +2,7 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 
 import DeliverySystemABI from "@/utils/DeliverySystem.json";
 
 // For development, replace with deployed address or keep empty
-export const CONTRACT_ADDRESS = "0x95AB89885A706a594ee94E94a83269cf760a3D88"; 
+export const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 export function useDeliveryContract() {
   const { writeContractAsync } = useWriteContract();
@@ -38,12 +38,13 @@ export function useDeliveryContract() {
 }
 
 type DeliveryData = [
+  string, // deliveryId
   string, // sender
-  string, // receiver
   string, // agent
+  string, // receiver
   string, // status
-  boolean, // isConfirmed
-  bigint  // timestamp
+  bigint, // timestamp
+  boolean // isConfirmed
 ];
 
 export function useDeliveryInfo(deliveryId: string) {

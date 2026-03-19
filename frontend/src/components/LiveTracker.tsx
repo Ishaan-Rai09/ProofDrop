@@ -36,10 +36,10 @@ const SENDER_POS: [number, number] = [37.7749, -122.4194];
 const RECEIVER_POS: [number, number] = [37.8044, -122.2712];
 const ROUTE: [number, number][] = [SENDER_POS, RECEIVER_POS];
 
-export default function LiveTracker({ status, isConfirmed, className = "h-96" }: LiveTrackerProps) {
+export default function LiveTracker({ status = "", isConfirmed, className = "h-96" }: LiveTrackerProps) {
   const [agentPos, setAgentPos] = useState<[number, number]>(SENDER_POS);
 
-  const [statusText, coordsStr] = status.split("|");
+  const [statusText, coordsStr] = (status || "").split("|");
 
   useEffect(() => {
     let interval: NodeJS.Timeout;

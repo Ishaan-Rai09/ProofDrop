@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDeliveryInfo } from "@/hooks/useContract";
 import { Search, CheckCircle2, CircleDashed } from "lucide-react";
 import { motion } from "framer-motion";
@@ -9,8 +9,19 @@ import LiveTrackerWrapper from "@/components/LiveTrackerWrapper";
 export default function Verify() {
   const [searchInput, setSearchInput] = useState("");
   const [deliveryId, setDeliveryId] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const { data: delivery, isLoading, isError, error } = useDeliveryInfo(deliveryId);
+
+  useEffect(() => {
+    if (delivery) {
+      console.log("Raw Delivery Data from blockchain:", delivery);
+    }
+  }, [delivery]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,17 +31,24 @@ export default function Verify() {
   };
 
   const deliveryData = delivery ? {
-    deliveryId: deliveryId,
-    sender: delivery[0],
-    receiver: delivery[1],
-    agent: delivery[2],
-    status: delivery[3],
-    isConfirmed: delivery[4],
-    timestamp: delivery[5]
+    deliveryId: (delivery as any).deliveryId || (delivery as any)[0] || "",
+    sender: (delivery as any).sender || (delivery as any)[1] || "",
+    agent: (delivery as any).agent || (delivery as any)[2] || "",
+    receiver: (delivery as any).receiver || (delivery as any)[3] || "",
+    status: (delivery as any).status || (delivery as any)[4] || "",
+    timestamp: (delivery as any).timestamp ?? (delivery as any)[5],
+    isConfirmed: (delivery as any).isConfirmed ?? (delivery as any)[6] ?? false
   } : null;
 
   const rawStatus = deliveryData?.status || "";
   const displayStatus = rawStatus.split("|")[0];
+
+  const formatDate = (timestamp?: bigint) => {
+    if (!timestamp) return "Pending";
+    const num = Number(timestamp);
+    if (isNaN(num) || num === 0) return "Pending";
+    return new Date(num * 1000).toLocaleString();
+  };
 
   return (
     <motion.div
@@ -118,28 +136,34 @@ export default function Verify() {
                 <div className="space-y-6">
                   <TimelineItem
                     title="Delivery Created"
-                    date={new Date(Number(deliveryData.timestamp) * 1000).toLocaleString()}
+                    date={formatDate(deliveryData.timestamp)}
                     completed={true}
                     delay={0.1}
                   />
                   <TimelineItem
                     title="Handed to Agent"
-                    date={displayStatus === "Picked Up" || displayStatus === "In Transit" || deliveryData.isConfirmed ? new Date(Number(deliveryData.timestamp) * 1000).toLocaleString() : ""}
-                    completed={displayStatus === "Picked Up" || displayStatus === "In Transit" || deliveryData.isConfirmed}
+                    date={displayStatus === "Picked Up" || displayStatus === "In Transit" || displayStatus === "Out for Delivery" || displayStatus === "Delivered" || deliveryData.isConfirmed ? formatDate(deliveryData.timestamp) : ""}
+                    completed={displayStatus === "Picked Up" || displayStatus === "In Transit" || displayStatus === "Out for Delivery" || displayStatus === "Delivered" || deliveryData.isConfirmed}
                     delay={0.2}
                   />
                   <TimelineItem
                     title="In Transit"
-                    date={displayStatus === "In Transit" || deliveryData.isConfirmed ? new Date(Number(deliveryData.timestamp) * 1000).toLocaleString() : ""}
-                    completed={displayStatus === "In Transit" || deliveryData.isConfirmed}
+                    date={displayStatus === "In Transit" || displayStatus === "Out for Delivery" || displayStatus === "Delivered" || deliveryData.isConfirmed ? formatDate(deliveryData.timestamp) : ""}
+                    completed={displayStatus === "In Transit" || displayStatus === "Out for Delivery" || displayStatus === "Delivered" || deliveryData.isConfirmed}
                     delay={0.3}
                   />
                   <TimelineItem
+                    title="Out for Delivery"
+                    date={displayStatus === "Out for Delivery" || displayStatus === "Delivered" || deliveryData.isConfirmed ? formatDate(deliveryData.timestamp) : ""}
+                    completed={displayStatus === "Out for Delivery" || displayStatus === "Delivered" || deliveryData.isConfirmed}
+                    delay={0.4}
+                  />
+                  <TimelineItem
                     title="Securely Delivered (Signed)"
-                    date={deliveryData.isConfirmed ? new Date(Number(deliveryData.timestamp) * 1000).toLocaleString() : ""}
+                    date={deliveryData.isConfirmed ? formatDate(deliveryData.timestamp) : ""}
                     completed={deliveryData.isConfirmed}
                     isFinal
-                    delay={0.4}
+                    delay={0.5}
                   />
                 </div>
               </div>
@@ -147,12 +171,12 @@ export default function Verify() {
               <div>
                 <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
                   <span className="relative flex h-3 w-3">
-                    {displayStatus === "In Transit" && (
+                    {(displayStatus === "In Transit" || displayStatus === "Out for Delivery") && !deliveryData.isConfirmed && (
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C7A36F] opacity-75"></span>
                     )}
-                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C7A36F]"></span>
+                    <span className={`relative inline-flex rounded-full h-3 w-3 ${deliveryData.isConfirmed ? 'bg-green-500' : 'bg-[#C7A36F]'}`}></span>
                   </span>
-                  Live GPS Tracking
+                  {deliveryData.isConfirmed ? "Final Delivery Coordinates" : "Live GPS Tracking"}
                 </h3>
                 <LiveTrackerWrapper status={deliveryData.status} isConfirmed={deliveryData.isConfirmed} />
               </div>

@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { useDeliveryContract } from "@/hooks/useContract";
 import { useAccount } from "wagmi";
-import { PlayCircle, PackagePlus, Truck, CheckSquare, Info } from "lucide-react";
+import { PlayCircle, PackagePlus, Truck, CheckSquare, Info, MapPin, Search, AlertCircle, CheckCircle2, Loader2, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
-  const { isConnected, address } = useAccount();
+  const { isConnected, address, chain } = useAccount();
   const { createDelivery, updateStatus, confirmDelivery } = useDeliveryContract();
 
   const [activeTab, setActiveTab] = useState<"sender" | "agent" | "receiver">("sender");
@@ -19,18 +19,81 @@ export default function Dashboard() {
     confirmId: ""
   });
 
+  const [addressSearch, setAddressSearch] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  // New Transaction State Indicator
+  const [txState, setTxState] = useState<{ status: "idle" | "pending" | "success" | "error", msg: string, hash?: string }>({ status: "idle", msg: "" });
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData({
+          ...formData,
+          latitude: position.coords.latitude.toFixed(6),
+          longitude: position.coords.longitude.toFixed(6),
+        });
+      },
+      (err) => alert("Could not fetch location: " + err.message)
+    );
+  };
+
+  const handleSearchAddress = async () => {
+    if (!addressSearch) return;
+    setIsSearching(true);
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressSearch)}`);
+      const data = await res.json();
+      if (data && data.length > 0) {
+        setFormData({
+          ...formData,
+          latitude: parseFloat(data[0].lat).toFixed(6),
+          longitude: parseFloat(data[0].lon).toFixed(6),
+        });
+      } else {
+        alert("Address not found. Please try adding more details like City or Pincode.");
+      }
+    } catch (e) {
+      alert("Search failed. Please try again.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Wrapper for all blockchain transactions to control loading UI
+  const handleTx = async (action: () => Promise<string>, successMsg: string) => {
+    setTxState({ status: "pending", msg: "Please review and confirm the transaction in MetaMask..." });
+    try {
+      const hash = await action();
+      setTxState({ status: "success", msg: successMsg, hash });
+    } catch (error: any) {
+      // Specifically handle the "User denied" cancellation error you were seeing
+      if (error.message?.includes("User denied") || error.message?.includes("User rejected")) {
+        setTxState({ status: "error", msg: "Transaction was cancelled / rejected by user." });
+      } else {
+        setTxState({ status: "error", msg: error.shortMessage || "Transaction failed. Please check the contract requirements." });
+      }
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createDelivery(formData.id, formData.receiver, formData.agent);
+    await handleTx(() => createDelivery(formData.id, formData.receiver, formData.agent), "Contract Initialize Request Sent!");
   };
+  
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     const packedStatus = `${formData.status}|${formData.latitude},${formData.longitude}`;
-    await updateStatus(formData.statusId, packedStatus);
+    await handleTx(() => updateStatus(formData.statusId, packedStatus), "Status GPS Broadcasted Successfully!");
   };
+  
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    await confirmDelivery(formData.confirmId);
+    await handleTx(() => confirmDelivery(formData.confirmId), "Receiver Cryptographic Signature applied!");
   };
 
   const useDemoData = () => {
@@ -97,8 +160,46 @@ export default function Dashboard() {
         })}
       </div>
 
+      {/* Transaction Banner Notification UI */}
+      {txState.status !== "idle" && (
+        <div className={`mb-6 p-5 rounded-xl border flex items-start gap-4 transition-all animate-in fade-in slide-in-from-top-4 ${
+          txState.status === "pending" ? "bg-blue-900/20 border-blue-500/50 text-blue-400" :
+          txState.status === "success" ? "bg-green-900/20 border-green-500/50 text-green-400" :
+          "bg-red-900/20 border-red-500/50 text-red-500"
+        }`}>
+          {txState.status === "pending" && <Loader2 className="w-6 h-6 animate-spin flex-shrink-0" />}
+          {txState.status === "success" && <CheckCircle2 className="w-6 h-6 flex-shrink-0" />}
+          {txState.status === "error" && <AlertCircle className="w-6 h-6 flex-shrink-0" />}
+          
+          <div className="flex-1">
+            <h4 className="font-bold text-base mb-1">
+              {txState.status === "pending" ? "Transaction Pending" : 
+               txState.status === "success" ? "Transaction Successful!" : "Transaction Failed"}
+            </h4>
+            <p className="text-sm opacity-90">{txState.msg}</p>
+            {txState.hash && (
+              chain?.id === 80002 ? (
+                <a 
+                  href={`https://amoy.polygonscan.com/tx/${txState.hash}`} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs bg-black/30 px-3 py-1.5 rounded border border-green-500/30 hover:bg-black/50 transition-colors font-mono"
+                >
+                  View on Polygonscan <ExternalLink className="w-3 h-3" />
+                </a>
+              ) : (
+                <div className="mt-3 inline-flex items-center gap-2 text-xs bg-black/30 px-3 py-2 rounded border border-green-500/30 font-mono text-gray-300">
+                  <span>Tx Hash: {txState.hash.slice(0,10)}...{txState.hash.slice(-8)}</span>
+                  <span className="text-gray-500 bg-gray-900 px-2 py-0.5 rounded">See VS Code Terminal for Hardhat Logs</span>
+                </div>
+              )
+            )}
+          </div>
+          <button onClick={() => setTxState({status: "idle", msg: ""})} className="opacity-50 hover:opacity-100 text-2xl leading-none">&times;</button>
+        </div>
+      )}
+
       <div className="bg-[#111] border border-gray-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-        {/* Subtle background glow */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-[#C7A36F] opacity-[0.03] blur-3xl pointer-events-none" />
 
         <AnimatePresence mode="wait">
@@ -124,8 +225,8 @@ export default function Dashboard() {
                     <input type="text" value={formData.receiver} onChange={e => setFormData({...formData, receiver: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono text-sm" placeholder="0x..." required />
                   </div>
                 </div>
-                <button type="submit" className="px-6 py-3 bg-[#C7A36F] text-black font-semibold rounded-lg hover:bg-[#b08d5c] transition-colors mt-4">
-                  Deploy Contract
+                <button type="submit" disabled={txState.status === "pending"} className="px-6 py-3 bg-[#C7A36F] text-black font-semibold rounded-lg hover:bg-[#b08d5c] disabled:opacity-50 transition-colors mt-4">
+                  {txState.status === "pending" ? "Confirm in Wallet..." : "Deploy Contract"}
                 </button>
               </form>
             </motion.div>
@@ -138,30 +239,50 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-500 mt-1">Update the GPS & transit status of active deliveries.</p>
               </div>
               <form onSubmit={handleUpdate} className="space-y-5 max-w-xl">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Package ID</label>
-                  <input type="text" value={formData.statusId} onChange={e => setFormData({...formData, statusId: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono" placeholder="PKG-..." required />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">New Status</label>
-                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition appearance-none">
-                    <option value="Picked Up">Picked Up</option>
-                    <option value="In Transit">In Transit</option>
-                    <option value="Out for Delivery">Out for Delivery</option>
-                  </select>
-                </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Latitude</label>
-                    <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono text-sm" placeholder="37.7749" required />
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Package ID</label>
+                    <input type="text" value={formData.statusId} onChange={e => setFormData({...formData, statusId: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono" placeholder="PKG-..." required />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Longitude</label>
-                    <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono text-sm" placeholder="-122.4194" required />
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-400 mb-1">New Status</label>
+                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition appearance-none">
+                      <option value="Picked Up">Picked Up</option>
+                      <option value="In Transit">In Transit</option>
+                      <option value="Out for Delivery">Out for Delivery</option>
+                    </select>
                   </div>
                 </div>
-                <button type="submit" className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors mt-4">
-                  Broadcast Status
+
+                <div className="mt-6 p-5 border border-gray-800 rounded-xl bg-gray-950 space-y-4">
+                  <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-[#C7A36F]" /> Location Tracking
+                  </h3>
+                  
+                  <div className="flex gap-2">
+                    <button type="button" onClick={handleGetCurrentLocation} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white p-3 rounded-lg border border-gray-700 transition flex items-center justify-center gap-2 text-sm font-medium">
+                      Use Device GPS
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input type="text" value={addressSearch} onChange={e => setAddressSearch(e.target.value)} className="flex-1 bg-black border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition text-sm" placeholder="Enter Pincode, City, or Address..." />
+                    <button type="button" onClick={handleSearchAddress} disabled={isSearching} className="bg-gray-800 hover:bg-gray-700 text-white px-4 rounded-lg border border-gray-700 transition flex items-center justify-center gap-2 min-w-[3rem]">
+                      {isSearching ? <span className="animate-spin text-[#C7A36F]">?</span> : <Search className="w-4 h-4 text-[#C7A36F]" />}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-2.5 text-gray-400 focus:border-[#C7A36F] focus:outline-none transition font-mono text-xs" placeholder="Lat" required />
+                    </div>
+                    <div>
+                      <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} className="w-full bg-black border border-gray-800 rounded-lg p-2.5 text-gray-400 focus:border-[#C7A36F] focus:outline-none transition font-mono text-xs" placeholder="Lng" required />
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" disabled={txState.status === "pending"} className="w-full px-6 py-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors mt-6 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                  {txState.status === "pending" ? "Confirm in Wallet..." : "Broadcast GPS Status On-Chain"}
                 </button>
               </form>
             </motion.div>
@@ -182,8 +303,8 @@ export default function Dashboard() {
                   <Info className="w-5 h-5 flex-shrink-0" />
                   <p>By signing this transaction, you verify that the parcel arrived securely and in expected condition.</p>
                 </div>
-                <button type="submit" className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors mt-4">
-                  Cryptographically Sign
+                <button type="submit" disabled={txState.status === "pending"} className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors mt-4 disabled:opacity-50">
+                  {txState.status === "pending" ? "Confirming in Web3..." : "Cryptographically Sign"}
                 </button>
               </form>
             </motion.div>
