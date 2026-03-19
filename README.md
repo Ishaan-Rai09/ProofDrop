@@ -1,57 +1,55 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# ProofDrop - Decentralized Delivery Proof System
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+ProofDrop is a Web3-powered supply chain and logistics tracking decentralized application (dApp). It leverages the Ethereum/Polygon Virtual Machine (EVM) architecture to provide **immutable, transparent, and cryptographically verified proofs** of delivery.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+![ProofDrop Banner](https://via.placeholder.com/1000x300?text=ProofDrop+Decentralized+Delivery)
 
-## Project Overview
+## ?? The Problem it Solves
+Traditional delivery systems suffer from centralized points of failure, disputes over "delivered" statuses, and lack of transparency. ProofDrop guarantees:
+1. **No Data Tampering**: Once a package is on the blockchain, no central authority can alter its timeline.
+2. **Cryptographic Proof of Receipt**: The Receiver must mathematically sign the delivery using their crypto wallet, effectively eliminating "fake delivery" scams.
+3. **Live GPS Tracking**: Delivery agents transmit location data integrated seamlessly into a modern React-based public verification portal.
 
-This example project includes:
+## ?? Key Features
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+* **Role-Based Workflows**: Tailored smart contract interactions for Senders, Delivery Agents, and Receivers.
+* **Immutable Timeline**: Real-time status updates (`Created` -> `Picked Up` -> `In Transit` -> `Out for Delivery` -> `Delivered`) written permanently to the blockchain.
+* **Wallet Authentication**: Driven by `Wagmi` and `Viem` for secure MetaMask connections.
+* **Interactive Live Tracker**: Real coordinates plotted on interactive maps (Leaflet/Nominatim) when a package is in transit.
+* **Public Verification Portal**: A read-only explorer (`/verify`) where anyone can plug in a Package ID (e.g., `PKG-123`) to audit its journey and final GPS drop-off coordinates.
 
-## Usage
+## ?? Tech Stack
 
-### Running Tests
+* **Frontend**: Next.js 14 (App Router), React, TypeScript
+* **Styling & UI**: Tailwind CSS, Framer Motion, Lucide Icons
+* **Web3 Integration**: Wagmi, Viem, React Query
+* **Smart Contracts**: Solidity (^0.8.20)
+* **Blockchain Environment**: Hardhat (Local Node) & Polygon Amoy (Testnet)
 
-To run all the tests in the project, execute the following command:
+## ?? Running the Project Locally
 
-```shell
-npx hardhat test
+### 1. Start the Local Blockchain
+In the root directory, start the Hardhat node to spin up 20 local test accounts with 10,000 fake ETH:
+```bash
+npx hardhat node
 ```
 
-You can also selectively run the Solidity or `mocha` tests:
-
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
+### 2. Deploy the Smart Contract
+In a new terminal, deploy the `DeliverySystem` contract to your local node:
+```bash
+npx hardhat ignition deploy ignition/modules/Delivery.ts --network localhost
 ```
 
-### Make a deployment to Sepolia
-
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
-
-To run the deployment to a local chain:
-
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+### 3. Start the Next.js Frontend
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+### 4. Connect MetaMask
+1. Open MetaMask and add the **Localhost 8545** network (`RPC URL: http://127.0.0.1:8545`, `Chain ID: 31337`).
+2. Import one or more private keys provided by the Hardhat terminal to act as your Sender, Agent, and Receiver.
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
-
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
-
-After setting the variable, you can run the deployment with the Sepolia network:
-
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
+---
+*Built with ?? for a decentralized logistical future.*
