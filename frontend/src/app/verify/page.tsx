@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useDeliveryInfo } from "@/hooks/useContract";
 import { Search, CheckCircle2, CircleDashed } from "lucide-react";
 import { motion } from "framer-motion";
+import LiveTrackerWrapper from "@/components/LiveTrackerWrapper";
 
 export default function Verify() {
   const [searchInput, setSearchInput] = useState("");
@@ -18,12 +19,25 @@ export default function Verify() {
     }
   };
 
+  const deliveryData = delivery ? {
+    deliveryId: deliveryId,
+    sender: delivery[0],
+    receiver: delivery[1],
+    agent: delivery[2],
+    status: delivery[3],
+    isConfirmed: delivery[4],
+    timestamp: delivery[5]
+  } : null;
+
+  const rawStatus = deliveryData?.status || "";
+  const displayStatus = rawStatus.split("|")[0];
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-3xl mx-auto space-y-8"
+      className="max-w-3xl mx-auto space-y-8 py-8"
     >
       <div className="text-center mb-10">
         <h1 className="text-3xl font-bold mb-4">Public Verification</h1>
@@ -31,11 +45,11 @@ export default function Verify() {
       </div>
 
       <form onSubmit={handleSearch} className="flex gap-2">
-        <input 
-          type="text" 
+        <input
+          type="text"
           value={searchInput}
           onChange={e => setSearchInput(e.target.value)}
-          placeholder="Enter Delivery ID (e.g. PKG-001)" 
+          placeholder="Enter Delivery ID (e.g. PKG-001)"
           className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#C7A36F] transition-colors"
         />
         <button type="submit" className="bg-[#C7A36F] text-black px-6 rounded-lg font-medium hover:bg-[#b08d5c] active:scale-95 transition-all flex gap-2 items-center">
@@ -63,7 +77,7 @@ export default function Verify() {
         </motion.div>
       )}
 
-      {delivery && (
+      {deliveryData && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -73,59 +87,74 @@ export default function Verify() {
           <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-950">
             <div>
               <p className="text-sm text-gray-500 mb-1">Delivery ID</p>
-              <h2 className="text-2xl font-mono font-bold text-[#C7A36F]">{delivery.deliveryId}</h2>
+              <h2 className="text-2xl font-mono font-bold text-[#C7A36F]">{deliveryData.deliveryId}</h2>
             </div>
-            
-            <div className={`px-4 py-2 rounded-full text-sm font-bold border ${delivery.isConfirmed ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-yellow-900/30 text-yellow-500 border-yellow-800'}`}>
-              {delivery.status}
+
+            <div className={`px-4 py-2 rounded-full text-sm font-bold border ${deliveryData.isConfirmed ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-yellow-900/30 text-yellow-500 border-yellow-800'}`}>
+              {displayStatus}
             </div>
           </div>
-          
+
           <div className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div>
                 <p className="text-sm text-gray-500 mb-2">Sender</p>
-                <p className="font-mono text-sm break-all">{delivery.sender}</p>
+                <p className="font-mono text-sm break-all">{deliveryData.sender}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-2">Agent</p>
-                <p className="font-mono text-sm break-all">{delivery.agent}</p>
+                <p className="font-mono text-sm break-all">{deliveryData.agent}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-2">Receiver</p>
-                <p className="font-mono text-sm break-all">{delivery.receiver}</p>
+                <p className="font-mono text-sm break-all">{deliveryData.receiver}</p>
               </div>
             </div>
 
-            <div className="border-t border-gray-800 pt-8 mt-8">
-              <h3 className="text-lg font-semibold mb-6">Delivery Timeline</h3>
-              
-              <div className="space-y-6">
-                <TimelineItem 
-                  title="Delivery Created" 
-                  date={new Date(Number(delivery.timestamp) * 1000).toLocaleString()} 
-                  completed={true} 
-                  delay={0.1}
-                />
-                <TimelineItem 
-                  title="Handed to Agent" 
-                  date={delivery.status === "Picked Up" || delivery.status === "In Transit" || delivery.isConfirmed ? new Date(Number(delivery.timestamp) * 1000).toLocaleString() : ""} 
-                  completed={delivery.status === "Picked Up" || delivery.status === "In Transit" || delivery.isConfirmed} 
-                  delay={0.2}
-                />
-                <TimelineItem 
-                  title="In Transit" 
-                  date={delivery.status === "In Transit" || delivery.isConfirmed ? new Date(Number(delivery.timestamp) * 1000).toLocaleString() : ""} 
-                  completed={delivery.status === "In Transit" || delivery.isConfirmed} 
-                  delay={0.3}
-                />
-                <TimelineItem 
-                  title="Securely Delivered (Signed)" 
-                  date={delivery.isConfirmed ? new Date(Number(delivery.timestamp) * 1000).toLocaleString() : ""} 
-                  completed={delivery.isConfirmed} 
-                  isFinal
-                  delay={0.4}
-                />
+            <div className="border-t border-gray-800 pt-8 mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-lg font-semibold mb-6">Delivery Timeline</h3>
+
+                <div className="space-y-6">
+                  <TimelineItem
+                    title="Delivery Created"
+                    date={new Date(Number(deliveryData.timestamp) * 1000).toLocaleString()}
+                    completed={true}
+                    delay={0.1}
+                  />
+                  <TimelineItem
+                    title="Handed to Agent"
+                    date={displayStatus === "Picked Up" || displayStatus === "In Transit" || deliveryData.isConfirmed ? new Date(Number(deliveryData.timestamp) * 1000).toLocaleString() : ""}
+                    completed={displayStatus === "Picked Up" || displayStatus === "In Transit" || deliveryData.isConfirmed}
+                    delay={0.2}
+                  />
+                  <TimelineItem
+                    title="In Transit"
+                    date={displayStatus === "In Transit" || deliveryData.isConfirmed ? new Date(Number(deliveryData.timestamp) * 1000).toLocaleString() : ""}
+                    completed={displayStatus === "In Transit" || deliveryData.isConfirmed}
+                    delay={0.3}
+                  />
+                  <TimelineItem
+                    title="Securely Delivered (Signed)"
+                    date={deliveryData.isConfirmed ? new Date(Number(deliveryData.timestamp) * 1000).toLocaleString() : ""}
+                    completed={deliveryData.isConfirmed}
+                    isFinal
+                    delay={0.4}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                  <span className="relative flex h-3 w-3">
+                    {displayStatus === "In Transit" && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C7A36F] opacity-75"></span>
+                    )}
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C7A36F]"></span>
+                  </span>
+                  Live GPS Tracking
+                </h3>
+                <LiveTrackerWrapper status={deliveryData.status} isConfirmed={deliveryData.isConfirmed} />
               </div>
             </div>
           </div>
@@ -137,24 +166,25 @@ export default function Verify() {
 
 function TimelineItem({ title, date, completed, isFinal = false, delay }: { title: string, date: string, completed: boolean, isFinal?: boolean, delay: number }) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, delay }}
-      className="flex items-start gap-4"
+      transition={{ duration: 0.5, delay }}
+      className="flex gap-4"
     >
       <div className="flex flex-col items-center">
-        {completed ? (
-          <CheckCircle2 className={`w-6 h-6 ${isFinal ? 'text-green-500' : 'text-[#C7A36F]'}`} />
-        ) : (
-          <CircleDashed className="w-6 h-6 text-gray-600" />
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 z-10 transition-colors ${completed ? 'bg-[#C7A36F] border-[#C7A36F] text-black' : 'bg-gray-900 border-gray-700 text-gray-600'}`}>
+          {completed ? <CheckCircle2 className="w-5 h-5" /> : <CircleDashed className="w-5 h-5" />}
+        </div>
+        {!isFinal && (
+          <div className={`w-0.5 h-12 -mt-2 -mb-2 transition-colors ${completed ? 'bg-[#C7A36F]/50' : 'bg-gray-800'}`} />
         )}
-        {!isFinal && <div className={`w-0.5 h-10 my-1 ${completed ? 'bg-[#C7A36F]' : 'bg-gray-800'}`}></div>}
       </div>
-      <div className="pt-0.5">
-        <p className={`font-medium ${completed ? 'text-white' : 'text-gray-500'}`}>{title}</p>
-        {date && <p className="text-sm text-gray-500 mt-1">{date}</p>}
+      <div className={`pb-8 ${completed ? 'text-white' : 'text-gray-600'}`}>
+        <h4 className="font-semibold">{title}</h4>
+        {date && <p className="text-sm mt-1 opacity-70">{date}</p>}
       </div>
     </motion.div>
   );
 }
+

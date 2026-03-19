@@ -15,9 +15,7 @@ export default function Home() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } }
-  };
-
+    visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 100 } } };  
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] text-center py-10 relative overflow-hidden">
       

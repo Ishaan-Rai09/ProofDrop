@@ -1,154 +1,196 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
 import { useDeliveryContract } from "@/hooks/useContract";
-import { Loader2 } from "lucide-react";
+import { useAccount } from "wagmi";
+import { PlayCircle, PackagePlus, Truck, CheckSquare, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
-  const { address, isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
   const { createDelivery, updateStatus, confirmDelivery } = useDeliveryContract();
-  
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
 
-  // Create Form
-  const [cDeliveryId, setCDeliveryId] = useState("");
-  const [cReceiver, setCReceiver] = useState("");
-  const [cAgent, setCAgent] = useState("");
+  const [activeTab, setActiveTab] = useState<"sender" | "agent" | "receiver">("sender");
 
-  // Update Form
-  const [uDeliveryId, setUDeliveryId] = useState("");
-  const [uStatus, setUStatus] = useState("Picked Up");
-
-  // Confirm Form
-  const [confDeliveryId, setConfDeliveryId] = useState("");
+  const [formData, setFormData] = useState({
+    id: "", receiver: "", agent: "",
+    statusId: "", status: "Picked Up",
+    latitude: "37.7800", longitude: "-122.3800",
+    confirmId: ""
+  });
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); setError(""); setSuccess("");
-    try {
-      const tx = await createDelivery(cDeliveryId, cReceiver, cAgent);
-      setSuccess(`Delivery created! TX: ${tx}`);
-    } catch (err: any) {
-      setError(err.message || "Failed to create delivery");
-    } finally {
-      setLoading(false);
-    }
+    await createDelivery(formData.id, formData.receiver, formData.agent);
   };
-
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); setError(""); setSuccess("");
-    try {
-      const tx = await updateStatus(uDeliveryId, uStatus);
-      setSuccess(`Status updated to ${uStatus}! TX: ${tx}`);
-    } catch (err: any) {
-      setError(err.message || "Failed to update status");
-    } finally {
-      setLoading(false);
-    }
+    const packedStatus = `${formData.status}|${formData.latitude},${formData.longitude}`;
+    await updateStatus(formData.statusId, packedStatus);
   };
-
   const handleConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); setError(""); setSuccess("");
-    try {
-      const tx = await confirmDelivery(confDeliveryId);
-      setSuccess(`Delivery confirmed! TX: ${tx}`);
-    } catch (err: any) {
-      setError(err.message || "Failed to confirm delivery");
-    } finally {
-      setLoading(false);
-    }
+    await confirmDelivery(formData.confirmId);
+  };
+
+  const useDemoData = () => {
+    if (!address) return alert("Connect wallet first to use Demo Data");
+    setFormData({
+      ...formData,
+      id: "PKG-" + Math.floor(Math.random() * 10000),
+      receiver: address, agent: address,
+      statusId: "PKG-1234", confirmId: "PKG-1234",
+      latitude: "37.7800", longitude: "-122.3800"
+    });
   };
 
   if (!isConnected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-        <h2 className="text-2xl font-bold mb-4">Please connect your wallet</h2>
-        <p className="text-gray-400">You need to connect your wallet to access the dashboard.</p>
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-6">
+            <PackagePlus className="w-8 h-8 text-gray-500" />
+          </div>
+          <h2 className="text-2xl font-bold">Access Restricted</h2>
+          <p className="text-gray-400">Please connect your Web3 wallet to access the Command Center.</p>
+        </div>
       </div>
     );
   }
 
+  const tabs = [
+    { id: "sender", label: "Shipper Portal", icon: PackagePlus },
+    { id: "agent", label: "Agent Portal", icon: Truck },
+    { id: "receiver", label: "Receiver Portal", icon: CheckSquare },
+  ];
+
   return (
-    <div className="space-y-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-gray-400">Manage deliveries safely on the blockchain.</p>
+    <div className="max-w-6xl mx-auto py-12 px-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight mb-2">Command Center</h1>
+          <p className="text-gray-400">Manage smart contracts, dispatch agents, and sign for deliveries.</p>
+        </div>
+        <button 
+          onClick={useDemoData}
+          className="flex items-center gap-2 px-4 py-2 bg-[#2a2418] text-[#C7A36F] border border-[#3d3322] rounded-lg hover:bg-[#3d3322] transition-colors text-sm font-medium"
+        >
+          <PlayCircle className="w-4 h-4" />
+          Seed Demo Data
+        </button>
       </div>
 
-      {error && <div className="p-4 bg-red-900/30 text-red-400 border border-red-800 rounded">{error}</div>}
-      {success && <div className="p-4 bg-green-900/30 text-green-400 border border-green-800 rounded">{success}</div>}
-
-      <div className="grid md:grid-cols-2 gap-8 pt-4">
-        {/* Create Delivery */}
-        <section className="bg-gray-900 border border-gray-800 p-6 rounded-xl">
-          <h2 className="text-xl font-semibold mb-4 text-[#C7A36F]">Create Delivery</h2>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Delivery ID</label>
-              <input required value={cDeliveryId} onChange={e => setCDeliveryId(e.target.value)} type="text" className="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#C7A36F]" placeholder="PKG-001" />
-            </div>
-            <div>
-              <div className="flex justify-between mb-1">
-                <label className="block text-sm text-gray-400">Receiver Address</label>
-                <button type="button" onClick={() => address && setCReceiver(address)} className="text-xs text-[#C7A36F] hover:underline">Use My Wallet (Demo)</button>
-              </div>
-              <input required value={cReceiver} onChange={e => setCReceiver(e.target.value)} type="text" className="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#C7A36F]" placeholder="0x..." />
-            </div>
-            <div>
-              <div className="flex justify-between mb-1">
-                <label className="block text-sm text-gray-400">Delivery Agent Address</label>
-                <button type="button" onClick={() => address && setCAgent(address)} className="text-xs text-[#C7A36F] hover:underline">Use My Wallet (Demo)</button>
-              </div>
-              <input required value={cAgent} onChange={e => setCAgent(e.target.value)} type="text" className="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#C7A36F]" placeholder="0x..." />
-            </div>
-            <button disabled={loading} type="submit" className="w-full py-2 bg-[#C7A36F] text-black font-medium rounded hover:bg-[#b08d5c] disabled:opacity-50 flex items-center justify-center">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
+      <div className="flex gap-2 p-1 bg-gray-900 border border-gray-800 rounded-xl mb-8 overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg text-sm font-medium transition-all ${isActive ? "bg-black text-[#C7A36F] shadow-sm" : "text-gray-400 hover:text-white"}`}
+            >
+              <Icon className="w-4 h-4" />
+              {tab.label}
             </button>
-          </form>
-        </section>
+          );
+        })}
+      </div>
 
-        <div className="space-y-8">
-          {/* Update Status */}
-          <section className="bg-gray-900 border border-gray-800 p-6 rounded-xl">
-            <h2 className="text-xl font-semibold mb-4 text-[#C7A36F]">Update Status</h2>
-            <form onSubmit={handleUpdate} className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Delivery ID</label>
-                <input required value={uDeliveryId} onChange={e => setUDeliveryId(e.target.value)} type="text" className="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#C7A36F]" placeholder="PKG-001" />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">New Status</label>
-                <select value={uStatus} onChange={e => setUStatus(e.target.value)} className="w-full bg-gray-950 border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#C7A36F]">
-                  <option value="Picked Up">Picked Up</option>
-                  <option value="In Transit">In Transit</option>
-                </select>
-              </div>
-              <button disabled={loading} type="submit" className="w-full py-2 bg-transparent border border-[#C7A36F] text-[#C7A36F] font-medium rounded hover:bg-[#C7A36F]/10 disabled:opacity-50 flex items-center justify-center">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update"}
-              </button>
-            </form>
-          </section>
+      <div className="bg-[#111] border border-gray-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-[#C7A36F] opacity-[0.03] blur-3xl pointer-events-none" />
 
-          {/* Confirm Delivery */}
-          <section className="bg-[#1a1c1a] border border-[#2E7D32]/30 p-6 rounded-xl">
-            <h2 className="text-xl font-semibold mb-4 text-[#2E7D32]">Confirm Handover</h2>
-            <p className="text-sm text-gray-400 mb-4">Receiver signs transaction to verify actual drop-off.</p>
-            <form onSubmit={handleConfirm} className="space-y-4">
-              <div>
-                <input required value={confDeliveryId} onChange={e => setConfDeliveryId(e.target.value)} type="text" className="w-full bg-black border border-gray-700 rounded px-3 py-2 text-white focus:outline-none focus:border-[#2E7D32]" placeholder="PKG-001" />
+        <AnimatePresence mode="wait">
+          {activeTab === "sender" && (
+            <motion.div key="sender" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <div className="mb-6 border-b border-gray-800 pb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2"><PackagePlus /> Initialize Delivery</h2>
+                <p className="text-sm text-gray-500 mt-1">Deploy a new package tracking contract onto Polygon.</p>
               </div>
-              <button disabled={loading} type="submit" className="w-full py-2 bg-[#2E7D32] text-white font-medium rounded hover:bg-[#206023] disabled:opacity-50 flex items-center justify-center">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sign & Confirm"}
-              </button>
-            </form>
-          </section>
-        </div>
+              <form onSubmit={handleCreate} className="space-y-5 max-w-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Package ID</label>
+                    <input type="text" value={formData.id} onChange={e => setFormData({...formData, id: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono" placeholder="PKG-..." required />
+                  </div>
+                  <div className="hidden md:block"></div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Agent Address (0x)</label>
+                    <input type="text" value={formData.agent} onChange={e => setFormData({...formData, agent: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono text-sm" placeholder="0x..." required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Receiver Address (0x)</label>
+                    <input type="text" value={formData.receiver} onChange={e => setFormData({...formData, receiver: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono text-sm" placeholder="0x..." required />
+                  </div>
+                </div>
+                <button type="submit" className="px-6 py-3 bg-[#C7A36F] text-black font-semibold rounded-lg hover:bg-[#b08d5c] transition-colors mt-4">
+                  Deploy Contract
+                </button>
+              </form>
+            </motion.div>
+          )}
+
+          {activeTab === "agent" && (
+            <motion.div key="agent" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+               <div className="mb-6 border-b border-gray-800 pb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2"><Truck /> Agent Operations</h2>
+                <p className="text-sm text-gray-500 mt-1">Update the GPS & transit status of active deliveries.</p>
+              </div>
+              <form onSubmit={handleUpdate} className="space-y-5 max-w-xl">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Package ID</label>
+                  <input type="text" value={formData.statusId} onChange={e => setFormData({...formData, statusId: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono" placeholder="PKG-..." required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">New Status</label>
+                  <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition appearance-none">
+                    <option value="Picked Up">Picked Up</option>
+                    <option value="In Transit">In Transit</option>
+                    <option value="Out for Delivery">Out for Delivery</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Latitude</label>
+                    <input type="text" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono text-sm" placeholder="37.7749" required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-400 mb-1">Longitude</label>
+                    <input type="text" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono text-sm" placeholder="-122.4194" required />
+                  </div>
+                </div>
+                <button type="submit" className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors mt-4">
+                  Broadcast Status
+                </button>
+              </form>
+            </motion.div>
+          )}
+
+          {activeTab === "receiver" && (
+            <motion.div key="receiver" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+               <div className="mb-6 border-b border-gray-800 pb-6">
+                <h2 className="text-xl font-bold flex items-center gap-2"><CheckSquare /> Sign for Delivery</h2>
+                <p className="text-sm text-gray-500 mt-1">Cryptographically sign to release agent liability & complete tracking.</p>
+              </div>
+              <form onSubmit={handleConfirm} className="space-y-5 max-w-xl">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Package ID</label>
+                  <input type="text" value={formData.confirmId} onChange={e => setFormData({...formData, confirmId: e.target.value})} className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#C7A36F] focus:outline-none transition font-mono" placeholder="PKG-..." required />
+                </div>
+                <div className="bg-yellow-900/20 border border-yellow-900/50 p-4 rounded-lg flex gap-3 text-yellow-500/80 text-sm">
+                  <Info className="w-5 h-5 flex-shrink-0" />
+                  <p>By signing this transaction, you verify that the parcel arrived securely and in expected condition.</p>
+                </div>
+                <button type="submit" className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors mt-4">
+                  Cryptographically Sign
+                </button>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
 }
+

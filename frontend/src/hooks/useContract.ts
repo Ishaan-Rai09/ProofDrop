@@ -37,6 +37,15 @@ export function useDeliveryContract() {
   return { createDelivery, updateStatus, confirmDelivery };
 }
 
+type DeliveryData = [
+  string, // sender
+  string, // receiver
+  string, // agent
+  string, // status
+  boolean, // isConfirmed
+  bigint  // timestamp
+];
+
 export function useDeliveryInfo(deliveryId: string) {
   const { data, isError, isLoading, error } = useReadContract({
     address: CONTRACT_ADDRESS,
@@ -48,5 +57,5 @@ export function useDeliveryInfo(deliveryId: string) {
     }
   });
 
-  return { data, isError, isLoading, error };
+  return { data: data as DeliveryData | undefined, isError, isLoading, error };
 }
