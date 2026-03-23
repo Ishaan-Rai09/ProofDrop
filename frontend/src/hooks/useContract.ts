@@ -1,4 +1,4 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useReadContract, useWriteContract } from "wagmi";
 import DeliverySystemABI from "@/utils/DeliverySystem.json";
 
 // For development, replace with deployed address or keep empty
@@ -37,7 +37,7 @@ export function useDeliveryContract() {
   return { createDelivery, updateStatus, confirmDelivery };
 }
 
-type DeliveryData = [
+export type DeliveryData = [
   string, // deliveryId
   string, // sender
   string, // agent

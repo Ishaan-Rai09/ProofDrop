@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useDeliveryInfo } from "@/hooks/useContract";
 import { Search, CheckCircle2, CircleDashed } from "lucide-react";
 import { motion } from "framer-motion";
@@ -9,36 +9,27 @@ import LiveTrackerWrapper from "@/components/LiveTrackerWrapper";
 export default function Verify() {
   const [searchInput, setSearchInput] = useState("");
   const [deliveryId, setDeliveryId] = useState("");
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const { data: delivery, isLoading, isError, error } = useDeliveryInfo(deliveryId);
 
-  useEffect(() => {
-    if (delivery) {
-      console.log("Raw Delivery Data from blockchain:", delivery);
-    }
-  }, [delivery]);
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if(searchInput) {
+    if (searchInput) {
       setDeliveryId(searchInput);
     }
   };
 
-  const deliveryData = delivery ? {
-    deliveryId: (delivery as any).deliveryId || (delivery as any)[0] || "",
-    sender: (delivery as any).sender || (delivery as any)[1] || "",
-    agent: (delivery as any).agent || (delivery as any)[2] || "",
-    receiver: (delivery as any).receiver || (delivery as any)[3] || "",
-    status: (delivery as any).status || (delivery as any)[4] || "",
-    timestamp: (delivery as any).timestamp ?? (delivery as any)[5],
-    isConfirmed: (delivery as any).isConfirmed ?? (delivery as any)[6] ?? false
-  } : null;
+  const deliveryData = delivery
+    ? {
+        deliveryId: delivery[0],
+        sender: delivery[1],
+        agent: delivery[2],
+        receiver: delivery[3],
+        status: delivery[4],
+        timestamp: delivery[5],
+        isConfirmed: delivery[6],
+      }
+    : null;
 
   const rawStatus = deliveryData?.status || "";
   const displayStatus = rawStatus.split("|")[0];

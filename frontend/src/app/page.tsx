@@ -1,102 +1,245 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Package, ShieldCheck, Zap } from "lucide-react";
+import {
+  ArrowUpRight,
+  Blocks,
+  Compass,
+  MapPinned,
+  ShieldCheck,
+  Signature,
+  Truck,
+} from "lucide-react";
+import { Web3HeroAnimated } from "@/components/ui/animated-web3-landing-page";
+import { ProofDropFooter } from "@/components/ui/proofdrop-footer";
+import { TestimonialsSection } from "@/components/ui/testimonials-with-marquee";
+
+const workflow = [
+  {
+    title: "Sender initializes the package",
+    description:
+      "A sender creates a package ID and binds the delivery to agent and receiver wallet addresses in the contract.",
+    icon: Compass,
+  },
+  {
+    title: "Agent publishes the route status",
+    description:
+      "Delivery agents update the contract with the current milestone and optional GPS coordinates for public visibility.",
+    icon: Truck,
+  },
+  {
+    title: "Receiver signs the final handoff",
+    description:
+      "The proof only closes when the receiver wallet confirms completion, giving everyone a shared immutable outcome.",
+    icon: Signature,
+  },
+];
+
+const signalCards = [
+  {
+    title: "Smart contract first",
+    description:
+      "Core lifecycle events live in Solidity, so verification does not depend on a mutable admin dashboard.",
+    icon: Blocks,
+  },
+  {
+    title: "Map-aware status updates",
+    description:
+      "GPS-linked updates pair well with the public verification page to show where the drop actually happened.",
+    icon: MapPinned,
+  },
+  {
+    title: "No fake delivery screenshots",
+    description:
+      "Wallet-level receiver confirmation removes the weak final step that usually causes costly support disputes.",
+    icon: ShieldCheck,
+  },
+];
+
+const testimonials = [
+  {
+    author: {
+      name: "Emma Thompson",
+      handle: "@emma_ops",
+      avatar:
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face",
+    },
+    text: "ProofDrop gave our operations team a shared proof layer. When a receiver disputes a drop, we check the on-chain record instead of chasing screenshots.",
+    href: "https://twitter.com/emmaai",
+  },
+  {
+    author: {
+      name: "David Park",
+      handle: "@david_chain",
+      avatar:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
+    },
+    text: "The sender-agent-receiver separation is the part that clicked for us. Each stakeholder has a clear role and the final signature closes the loop cleanly.",
+    href: "https://twitter.com/davidtech",
+  },
+  {
+    author: {
+      name: "Sofia Rodriguez",
+      handle: "@sofia_maps",
+      avatar:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face",
+    },
+    text: "The public verify page makes live delivery proof understandable for non-technical users. That helped us onboard support and field agents much faster.",
+  },
+];
 
 export default function Home() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1, 
-      transition: { staggerChildren: 0.15 } 
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 100 } } };  
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-6rem)] text-center py-10 relative overflow-hidden">
-      
-      {/* Decorative gradient glow behind text */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#C7A36F]/5 blur-[120px] rounded-full point-events-none z-[-1]" />
+    <div className="overflow-hidden bg-[#050816] text-white">
+      <Web3HeroAnimated />
 
-      <motion.div 
-        className="max-w-5xl mx-auto px-4 w-full"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+      <section className="relative border-y border-white/10 bg-[#070b14]">
+        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:px-6 lg:grid-cols-3 lg:px-8">
+          {[
+            {
+              label: "Public verify route",
+              value: "/verify",
+              note: "Anyone can inspect a package timeline without wallet access.",
+            },
+            {
+              label: "Operator route",
+              value: "/dashboard",
+              note: "One place for senders, agents, and receivers to complete actions.",
+            },
+            {
+              label: "Contract action flow",
+              value: "Create -> Update -> Confirm",
+              note: "The UI mirrors the smart contract lifecycle already present in the repo.",
+            },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-xl"
+            >
+              <p className="text-sm uppercase tracking-[0.22em] text-slate-400">
+                {item.label}
+              </p>
+              <p className="mt-3 text-xl font-semibold text-white">{item.value}</p>
+              <p className="mt-2 text-sm leading-7 text-slate-400">{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section
+        id="workflow"
+        className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28 lg:px-8"
       >
-        <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900 border border-gray-800 text-sm text-gray-400 mb-8 mx-auto">
-          <span className="w-2 h-2 rounded-full bg-[#C7A36F] animate-pulse" />
-          Blockchain Verified Delivery
-        </motion.div>
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+          <div>
+            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.28em] text-slate-300">
+              Workflow
+            </span>
+            <h2 className="mt-6 max-w-xl text-4xl font-semibold tracking-tight text-white md:text-5xl">
+              Designed around the exact delivery lifecycle your contract already enforces.
+            </h2>
+            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-400">
+              The landing page now speaks directly to the way ProofDrop works:
+              initialize a package, update agent location and status, then collect
+              the receiver signature that seals the proof.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-medium text-white transition hover:bg-white/10"
+              >
+                Open dashboard
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/verify"
+                className="inline-flex items-center gap-2 rounded-full border border-[#8bd4ff]/30 bg-[#8bd4ff]/10 px-5 py-3 text-sm font-medium text-[#8bd4ff] transition hover:bg-[#8bd4ff]/[0.15]"
+              >
+                Open verification portal
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
 
-        <motion.h1 
-          variants={itemVariants} 
-          className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter mb-6 leading-tight"
-        >
-          <span className="text-white">Trustless Delivery</span>
-          <br />
-          <span className="text-[#C7A36F]">Verification.</span>
-        </motion.h1>
+          <div className="grid gap-4">
+            {workflow.map((item, index) => {
+              const Icon = item.icon;
 
-        <motion.p 
-          variants={itemVariants} 
-          className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10"
-        >
-          A decentralized system where every delivery action is cryptographically recorded on the blockchain, eliminating disputes and fake delivery claims.
-        </motion.p>
+              return (
+                <div
+                  key={item.title}
+                  className="rounded-[28px] border border-white/10 bg-gradient-to-br from-white/10 to-white/[0.03] p-6 backdrop-blur-xl"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#8bd4ff]/[0.12] text-[#8bd4ff]">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="mb-2 text-sm uppercase tracking-[0.24em] text-slate-500">
+                        Step {index + 1}
+                      </div>
+                      <h3 className="text-xl font-semibold text-white">{item.title}</h3>
+                      <p className="mt-3 text-sm leading-7 text-slate-400">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
-        <motion.div 
-          variants={itemVariants} 
-          className="flex flex-col sm:flex-row gap-4 justify-center mb-24"
-        >
-          <Link 
-            href="/dashboard" 
-            className="px-8 py-3.5 bg-[#C7A36F] text-black font-semibold rounded-lg hover:bg-[#b08d5c] transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(199,163,111,0.15)] hover:shadow-[0_0_30px_rgba(199,163,111,0.3)]"
-          >
-            Open Dashboard
-          </Link>
-          <Link 
-            href="/verify" 
-            className="px-8 py-3.5 bg-gray-900 border border-gray-700 text-white font-medium rounded-lg hover:bg-gray-800 transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
-          >
-            Verify a Delivery
-          </Link>
-        </motion.div>
+      <section
+        id="signals"
+        className="relative border-y border-white/10 bg-[linear-gradient(180deg,rgba(139,212,255,0.07),rgba(5,8,22,0.2))]"
+      >
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28 lg:px-8">
+          <div className="max-w-3xl">
+            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs uppercase tracking-[0.28em] text-slate-300">
+              Signals
+            </span>
+            <h2 className="mt-6 text-4xl font-semibold tracking-tight text-white md:text-5xl">
+              The interface now mirrors the strongest parts of the product.
+            </h2>
+            <p className="mt-5 text-lg leading-8 text-slate-400">
+              Instead of a minimal hero, the home page now frames ProofDrop as a
+              proof layer for logistics with visible chain state, location-aware
+              updates, and signature-based completion.
+            </p>
+          </div>
 
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-          <FeatureCard 
-            icon={<Package className="w-6 h-6 text-[#C7A36F]" />}
-            title="1. Create Orders"
-            description="Generate a unique on-chain ID for your package locking in the sender and receiver rules."
-          />
-          <FeatureCard 
-            icon={<Zap className="w-6 h-6 text-[#C7A36F]" />}
-            title="2. Live Tracking"
-            description="Delivery agents update the status in transit, secured immutably on the ledger."
-          />
-          <FeatureCard 
-            icon={<ShieldCheck className="w-6 h-6 text-[#C7A36F]" />}
-            title="3. Cryptographic Proof"
-            description="The receiver signs the final handover with their own wallet. Nobody can fake the drop."
-          />
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-}
+          <div className="mt-12 grid gap-5 lg:grid-cols-3">
+            {signalCards.map((card) => {
+              const Icon = card.icon;
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
-  return (
-    <div className="bg-gray-900 border border-gray-800 p-6 rounded-xl hover:bg-gray-800/80 transition-colors group">
-      <div className="w-12 h-12 bg-black border border-gray-800 rounded-lg flex items-center justify-center mb-6 group-hover:border-[#C7A36F]/50 transition-colors">
-        {icon}
-      </div>
-      <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
-      <p className="text-gray-400 text-sm leading-relaxed">{description}</p>
+              return (
+                <div
+                  key={card.title}
+                  className="rounded-[30px] border border-white/10 bg-slate-950/[0.55] p-7 shadow-[0_24px_60px_rgba(0,0,0,0.3)] backdrop-blur-xl"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.08]">
+                    <Icon className="h-5 w-5 text-[#f6c17b]" />
+                  </div>
+                  <h3 className="mt-6 text-2xl font-semibold text-white">{card.title}</h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-400">
+                    {card.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section id="testimonials">
+        <TestimonialsSection
+          title="Teams adopt faster when every handoff is legible"
+          description="Operators, field teams, and receivers all understand the same proof trail when the product experience matches the delivery workflow."
+          testimonials={testimonials}
+        />
+      </section>
+
+      <ProofDropFooter />
     </div>
   );
 }

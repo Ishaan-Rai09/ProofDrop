@@ -5,10 +5,10 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet"
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-interface LiveTrackerProps {
+export interface LiveTrackerProps {
   status: string;
   isConfirmed: boolean;
-  className?: string; // Add className prop for custom sizing
+  className?: string;
 }
 
 // Generate some sleek marker icons to fit the Dark/Gold theme
@@ -38,49 +38,44 @@ const ROUTE: [number, number][] = [SENDER_POS, RECEIVER_POS];
 
 export default function LiveTracker({ status = "", isConfirmed, className = "h-96" }: LiveTrackerProps) {
   const [agentPos, setAgentPos] = useState<[number, number]>(SENDER_POS);
-
   const [statusText, coordsStr] = (status || "").split("|");
+  const shouldSimulate = statusText === "In Transit" && !isConfirmed && !coordsStr;
+
+  let targetPos: [number, number] | null = null;
+  if (coordsStr) {
+    const [latStr, lngStr] = coordsStr.split(",");
+    const lat = parseFloat(latStr);
+    const lng = parseFloat(lngStr);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      targetPos = [lat, lng];
+    }
+  }
+
+  const resolvedAgentPos = targetPos
+    ?? (isConfirmed || statusText === "Delivered" ? RECEIVER_POS : SENDER_POS);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    let targetPos: [number, number] | null = null;
-    if (coordsStr) {
-       const [latStr, lngStr] = coordsStr.split(",");
-       const lat = parseFloat(latStr);
-       const lng = parseFloat(lngStr);
-       if (!isNaN(lat) && !isNaN(lng)) {
-           targetPos = [lat, lng];
-       }
+    if (!shouldSimulate) {
+      return;
     }
 
-    // Agent movement tracking
-    if (targetPos) {
-       // If coordinates were explicitly provided via on-chain status
-       setAgentPos(targetPos);
-    } else if (statusText === "In Transit" && !isConfirmed) {
-      // Fallback: Simulate if no specific GPS location provided
-      let progress = 0.1; // Start slightly past sender
-      const speed = 0.005; // Simulation speed
-
-      interval = setInterval(() => {
+    let progress = 0.1;
+    const speed = 0.005;
+    const interval = setInterval(() => {
         progress += speed;
-        if (progress > 0.95) progress = 0.1; // Loop the simulation for the demo if it reaches end
+        if (progress > 0.95) progress = 0.1;
         const lat = SENDER_POS[0] + (RECEIVER_POS[0] - SENDER_POS[0]) * progress;
         const lng = SENDER_POS[1] + (RECEIVER_POS[1] - SENDER_POS[1]) * progress;
-        
+
         setAgentPos([lat, lng]);
       }, 200);
-    } else if (isConfirmed || statusText === "Delivered") {
-      setAgentPos(RECEIVER_POS);
-    } else {
-      setAgentPos(SENDER_POS);
-    }
 
     return () => {
-      if (interval) clearInterval(interval);
+      clearInterval(interval);
     };
-  }, [status, isConfirmed, statusText, coordsStr]);
+  }, [shouldSimulate]);
+
+  const displayedAgentPos = shouldSimulate ? agentPos : resolvedAgentPos;
 
   return (
     <div className={`w-full rounded-xl overflow-hidden border border-gray-800 shadow-2xl relative z-0 ${className}`}>
@@ -110,7 +105,7 @@ export default function LiveTracker({ status = "", isConfirmed, className = "h-9
         </Marker>
 
         {(statusText !== "Pending" && statusText !== "Created") && (
-          <Marker position={agentPos} icon={AGENT_ICON}>
+          <Marker position={displayedAgentPos} icon={AGENT_ICON}>
             <Popup className="font-mono text-black">
               <b>Delivery Agent</b><br/>Current GPS Location<br/>
               {coordsStr ? `(Verified On-Chain)` : `(Simulated Transit)`}

@@ -1,7 +1,7 @@
 "use client";
 
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { polygonMumbai, localhost, hardhat, polygonAmoy } from "wagmi/chains";
+import { hardhat, polygonAmoy } from "wagmi/chains";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { injected } from "wagmi/connectors";
 

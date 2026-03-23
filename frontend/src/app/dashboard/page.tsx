@@ -6,11 +6,18 @@ import { useAccount } from "wagmi";
 import { PlayCircle, PackagePlus, Truck, CheckSquare, Info, MapPin, Search, AlertCircle, CheckCircle2, Loader2, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+type DashboardTab = "sender" | "agent" | "receiver";
+type TxState = {
+  status: "idle" | "pending" | "success" | "error";
+  msg: string;
+  hash?: string;
+};
+
 export default function Dashboard() {
   const { isConnected, address, chain } = useAccount();
   const { createDelivery, updateStatus, confirmDelivery } = useDeliveryContract();
 
-  const [activeTab, setActiveTab] = useState<"sender" | "agent" | "receiver">("sender");
+  const [activeTab, setActiveTab] = useState<DashboardTab>("sender");
 
   const [formData, setFormData] = useState({
     id: "", receiver: "", agent: "",
@@ -23,7 +30,7 @@ export default function Dashboard() {
   const [isSearching, setIsSearching] = useState(false);
 
   // New Transaction State Indicator
-  const [txState, setTxState] = useState<{ status: "idle" | "pending" | "success" | "error", msg: string, hash?: string }>({ status: "idle", msg: "" });
+  const [txState, setTxState] = useState<TxState>({ status: "idle", msg: "" });
 
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -57,11 +64,27 @@ export default function Dashboard() {
       } else {
         alert("Address not found. Please try adding more details like City or Pincode.");
       }
-    } catch (e) {
+    } catch {
       alert("Search failed. Please try again.");
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const getErrorMessage = (error: unknown) => {
+    if (typeof error === "object" && error !== null) {
+      if ("message" in error && typeof error.message === "string") {
+        if (error.message.includes("User denied") || error.message.includes("User rejected")) {
+          return "Transaction was cancelled / rejected by user.";
+        }
+      }
+
+      if ("shortMessage" in error && typeof error.shortMessage === "string") {
+        return error.shortMessage;
+      }
+    }
+
+    return "Transaction failed. Please check the contract requirements.";
   };
 
   // Wrapper for all blockchain transactions to control loading UI
@@ -70,13 +93,8 @@ export default function Dashboard() {
     try {
       const hash = await action();
       setTxState({ status: "success", msg: successMsg, hash });
-    } catch (error: any) {
-      // Specifically handle the "User denied" cancellation error you were seeing
-      if (error.message?.includes("User denied") || error.message?.includes("User rejected")) {
-        setTxState({ status: "error", msg: "Transaction was cancelled / rejected by user." });
-      } else {
-        setTxState({ status: "error", msg: error.shortMessage || "Transaction failed. Please check the contract requirements." });
-      }
+    } catch (error: unknown) {
+      setTxState({ status: "error", msg: getErrorMessage(error) });
     }
   };
 
@@ -121,7 +139,7 @@ export default function Dashboard() {
     );
   }
 
-  const tabs = [
+  const tabs: Array<{ id: DashboardTab; label: string; icon: typeof PackagePlus }> = [
     { id: "sender", label: "Shipper Portal", icon: PackagePlus },
     { id: "agent", label: "Agent Portal", icon: Truck },
     { id: "receiver", label: "Receiver Portal", icon: CheckSquare },
@@ -150,7 +168,7 @@ export default function Dashboard() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg text-sm font-medium transition-all ${isActive ? "bg-black text-[#C7A36F] shadow-sm" : "text-gray-400 hover:text-white"}`}
             >
               <Icon className="w-4 h-4" />
@@ -314,4 +332,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
