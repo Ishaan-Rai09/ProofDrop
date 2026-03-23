@@ -11,7 +11,7 @@ async function main() {
 
   const contract = new ethers.Contract(contractAddress, abi, provider);
 
-  const testIds = ["PKG-2183", "PKG-1234"];
+  const testIds = ["PKG-133", "PKG-2183"];
   for (const id of testIds) {
     try {
       console.log(`Checking ${id}...`);

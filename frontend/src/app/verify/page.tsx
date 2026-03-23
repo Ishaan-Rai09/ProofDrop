@@ -24,13 +24,13 @@ export default function Verify() {
 
   const deliveryData = delivery
     ? {
-        deliveryId: delivery[0],
-        sender: delivery[1],
-        agent: delivery[2],
-        receiver: delivery[3],
-        status: delivery[4],
-        timestamp: delivery[5],
-        isConfirmed: delivery[6],
+        deliveryId: (delivery as any).deliveryId || (delivery as any)[0] || "",
+        sender: (delivery as any).sender || (delivery as any)[1] || "",
+        agent: (delivery as any).agent || (delivery as any)[2] || "",
+        receiver: (delivery as any).receiver || (delivery as any)[3] || "",
+        status: (delivery as any).status || (delivery as any)[4] || "",
+        timestamp: (delivery as any).timestamp || (delivery as any)[5] || 0n,
+        isConfirmed: (delivery as any).isConfirmed || (delivery as any)[6] || false,
       }
     : null;
 
