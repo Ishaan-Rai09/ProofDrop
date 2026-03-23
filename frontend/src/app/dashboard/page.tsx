@@ -116,11 +116,12 @@ export default function Dashboard() {
 
   const useDemoData = () => {
     if (!address) return alert("Connect wallet first to use Demo Data");
+    const newId = "PKG-" + Math.floor(Math.random() * 10000);
     setFormData({
       ...formData,
-      id: "PKG-" + Math.floor(Math.random() * 10000),
+      id: newId,
       receiver: address, agent: address,
-      statusId: "PKG-1234", confirmId: "PKG-1234",
+      statusId: newId, confirmId: newId,
       latitude: "37.7800", longitude: "-122.3800"
     });
   };
