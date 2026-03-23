@@ -48,15 +48,16 @@ export type DeliveryData = [
 ];
 
 export function useDeliveryInfo(deliveryId: string) {
-  const { data, isError, isLoading, error } = useReadContract({
+  const { data, isError, isLoading, error, refetch } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: DeliverySystemABI.abi,
     functionName: "getDelivery",
     args: [deliveryId],
     query: {
       enabled: !!deliveryId,
+      refetchInterval: 5000, // Poll every 5 seconds for live updates
     }
   });
 
-  return { data: data as DeliveryData | undefined, isError, isLoading, error };
+  return { data: data as DeliveryData | undefined, isError, isLoading, error, refetch };
 }

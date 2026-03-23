@@ -10,12 +10,15 @@ export default function Verify() {
   const [searchInput, setSearchInput] = useState("");
   const [deliveryId, setDeliveryId] = useState("");
 
-  const { data: delivery, isLoading, isError, error } = useDeliveryInfo(deliveryId);
+  const { data: delivery, isLoading, isError, error, refetch } = useDeliveryInfo(deliveryId);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput) {
       setDeliveryId(searchInput);
+      if (deliveryId === searchInput) {
+        refetch();
+      }
     }
   };
 
