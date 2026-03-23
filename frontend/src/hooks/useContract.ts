@@ -55,7 +55,9 @@ export function useDeliveryInfo(deliveryId: string) {
     args: [deliveryId],
     query: {
       enabled: !!deliveryId,
-      refetchInterval: 5000, // Poll every 5 seconds for live updates
+      refetchInterval: 3000,    // Poll every 3 seconds for live updates
+      gcTime: 0,                // Never cache blockchain data
+      staleTime: 0,             // Always treat data as stale
     }
   });
 

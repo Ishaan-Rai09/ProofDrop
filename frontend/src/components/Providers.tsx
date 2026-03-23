@@ -9,7 +9,8 @@ export const config = createConfig({
   chains: [sepolia, hardhat, polygonAmoy],
   connectors: [injected()],
   transports: {
-    [sepolia.id]: http(),
+    // USE YOUR ALCHEMY RPC HERE, fallback to default only if undefined
+    [sepolia.id]: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL), 
     [hardhat.id]: http(),
     [polygonAmoy.id]: http(),
   },
