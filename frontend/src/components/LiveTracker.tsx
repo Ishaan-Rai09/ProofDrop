@@ -54,6 +54,8 @@ export default function LiveTracker({ status = "", isConfirmed, className = "h-9
   const resolvedAgentPos = targetPos
     ?? (isConfirmed || statusText === "Delivered" ? RECEIVER_POS : SENDER_POS);
 
+  const initialCenter = targetPos ?? [37.789, -122.345];
+
   useEffect(() => {
     if (!shouldSimulate) {
       return;
@@ -80,8 +82,9 @@ export default function LiveTracker({ status = "", isConfirmed, className = "h-9
   return (
     <div className={`w-full rounded-xl overflow-hidden border border-gray-800 shadow-2xl relative z-0 ${className}`}>
       <MapContainer
-        center={[37.789, -122.345]} // Middle of the bay
-        zoom={12}
+        key={initialCenter.join(",")} // Force map to re-center when coordinates change
+        center={initialCenter} // Dynamic center instead of hardcoded middle of the bay
+        zoom={targetPos ? 15 : 12}
         style={{ width: "100%", height: "100%", zIndex: 0 }}
       >
         {/* Sleek Dark Mode Tiles from CartoDB */}
