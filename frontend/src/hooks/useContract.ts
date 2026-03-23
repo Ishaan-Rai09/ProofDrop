@@ -2,7 +2,7 @@ import { useReadContract, useWriteContract } from "wagmi";
 import DeliverySystemABI from "@/utils/DeliverySystem.json";
 
 // For development, replace with deployed address or keep empty
-export const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+export const CONTRACT_ADDRESS = "0x7917aa2336E6d0333e05542e8f2164C1838D1Fe3";
 
 export function useDeliveryContract() {
   const { writeContractAsync } = useWriteContract();

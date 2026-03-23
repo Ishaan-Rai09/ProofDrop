@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-a83e5b44542ab4c6c95a698ce68a970930656292",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/Delivery.sol": "project/contracts/Delivery.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Delivery.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.20;\r\n\r\ncontract DeliverySystem {\r\n    struct Delivery {\r\n        string deliveryId;\r\n        address sender;\r\n        address agent;\r\n        address receiver;\r\n        string status;\r\n        uint256 timestamp;\r\n        bool isConfirmed;\r\n    }\r\n\r\n    mapping(string => Delivery) public deliveries;\r\n    mapping(string => bool) public deliveryExists;\r\n\r\n    event DeliveryCreated(\r\n        string indexed deliveryId,\r\n        address indexed sender,\r\n        address indexed receiver,\r\n        address agent,\r\n        uint256 timestamp\r\n    );\r\n\r\n    event DeliveryStatusUpdated(\r\n        string indexed deliveryId,\r\n        string status,\r\n        uint256 timestamp\r\n    );\r\n\r\n    event DeliveryConfirmed(\r\n        string indexed deliveryId,\r\n        address indexed receiver,\r\n        uint256 timestamp\r\n    );\r\n\r\n    function createDelivery(\r\n        string memory _deliveryId,\r\n        address _receiver,\r\n        address _agent\r\n    ) public {\r\n        require(!deliveryExists[_deliveryId], \"Delivery ID already exists\");\r\n        require(_receiver != address(0), \"Invalid receiver address\");\r\n        require(_agent != address(0), \"Invalid agent address\");\r\n\r\n        deliveries[_deliveryId] = Delivery({\r\n            deliveryId: _deliveryId,\r\n            sender: msg.sender,\r\n            agent: _agent,\r\n            receiver: _receiver,\r\n            status: \"Created\",\r\n            timestamp: block.timestamp,\r\n            isConfirmed: false\r\n        });\r\n\r\n        deliveryExists[_deliveryId] = true;\r\n\r\n        emit DeliveryCreated(\r\n            _deliveryId,\r\n            msg.sender,\r\n            _receiver,\r\n            _agent,\r\n            block.timestamp\r\n        );\r\n    }\r\n\r\n    function updateStatus(string memory _deliveryId, string memory _status) public {\r\n        require(deliveryExists[_deliveryId], \"Delivery does not exist\");\r\n        Delivery storage delivery = deliveries[_deliveryId];\r\n        require(!delivery.isConfirmed, \"Delivery already confirmed\");\r\n        \r\n        // Either sender or agent can update status, but usually agent\r\n        require(\r\n            msg.sender == delivery.agent || msg.sender == delivery.sender,\r\n            \"Not authorized to update status\"\r\n        );\r\n\r\n        delivery.status = _status;\r\n        delivery.timestamp = block.timestamp;\r\n\r\n        emit DeliveryStatusUpdated(_deliveryId, _status, block.timestamp);\r\n    }\r\n\r\n    function confirmDelivery(string memory _deliveryId) public {\r\n        require(deliveryExists[_deliveryId], \"Delivery does not exist\");\r\n        Delivery storage delivery = deliveries[_deliveryId];\r\n        require(!delivery.isConfirmed, \"Delivery already confirmed\");\r\n        require(msg.sender == delivery.receiver, \"Only receiver can confirm\");\r\n\r\n        delivery.status = \"Delivered\";\r\n        delivery.isConfirmed = true;\r\n        delivery.timestamp = block.timestamp;\r\n\r\n        emit DeliveryConfirmed(_deliveryId, msg.sender, block.timestamp);\r\n    }\r\n\r\n    function getDelivery(string memory _deliveryId)\r\n        public\r\n        view\r\n        returns (Delivery memory)\r\n    {\r\n        require(deliveryExists[_deliveryId], \"Delivery does not exist\");\r\n        return deliveries[_deliveryId];\r\n    }\r\n}"
+      }
+    }
+  }
+}
