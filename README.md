@@ -7,7 +7,6 @@
 
 ## 🎥 Video Demonstration
 
-> **How to add your video:** If you are viewing this on GitHub, click the `✎ (Edit)` button on this README. Then, **drag and drop** your `.mp4` or `.mov` video file right into this space. GitHub will automatically upload it and create a playable video player for you!
 
 <!-- DRAG AND DROP YOUR VIDEO JUST BELOW THIS LINE -->
 
