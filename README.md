@@ -39,7 +39,6 @@ Traditional delivery systems suffer from centralized points of failure, disputes
 
 ## 🚀 Live Deployment
 - **Frontend App (Vercel)**: [View Live App](https://proof-drop-flax.vercel.app/) *(Make sure to connect to Sepolia network in your Wallet)*
-- **Smart Contract (Sepolia Testnet)**: `0x7917aa2336E6d0333e05542e8f2164C1838D1Fe3`
 
 ---
 
